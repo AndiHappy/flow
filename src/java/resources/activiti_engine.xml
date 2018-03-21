@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans   http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd
+	http://www.springframework.org/schema/tx   http://www.springframework.org/schema/tx/spring-tx-2.5.xsd">
+
+	<context:annotation-config />
+	
+	<!--数据库配置 -->
+	<bean id="activitiDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close">
+		<property name="driverClassName" value="${activitidb.driver}" />
+		<property name="url" value="${activitidb.url}" />
+		<property name="username" value="${activitidb.username}" />
+		<property name="password" value="${activitidb.password}" />
+		<property name="initialSize" value="20" />
+		<property name="maxActive" value="50" />
+		<property name="maxIdle" value="20" />
+		<property name="minIdle" value="10" />
+	</bean>
+	
+	<!-- 事务处理 -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="activitiDataSource" />
+	</bean>
+	
+		<!-- Engine的实时服务 -->
+	<bean id="customRuntimeServiceImpl" class="com.flow.custom.service.CustomRuntimeServiceImpl">
+	</bean>
+	
+	<!-- Engine的扩展的task服务 -->
+	<bean id="customTaskServiceImpl" class="com.flow.custom.service.CustomTaskServiceImpl"></bean>
+	
+	<!-- 配置对象 -->
+	<bean id="processEngineConfiguration" class="com.flow.context.FlowEngine">
+		<property name="dataSource" ref="activitiDataSource" />
+		<property name="transactionManager" ref="transactionManager" />
+		<property name="databaseSchemaUpdate" value="true" />
+		<property name="jobExecutorActivate" value="false" />
+		<property name="runtimeService" ref="customRuntimeServiceImpl"> </property>
+		<property name="taskService" ref="customTaskServiceImpl"></property>
+	</bean>
+
+	<!-- processEngine -->
+	<bean id="processEngine" class="org.activiti.spring.ProcessEngineFactoryBean">
+		<property name="processEngineConfiguration" ref="processEngineConfiguration" />
+	</bean>
+	
+</beans>
