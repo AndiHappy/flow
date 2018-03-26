@@ -1,8 +1,10 @@
 package com.flow.custom.service;
 
+import java.util.List;
 import java.util.Map;
 
 import org.activiti.engine.impl.TaskServiceImpl;
+import org.activiti.engine.impl.persistence.entity.TaskEntity;
 import org.springframework.stereotype.Component;
 
 import com.flow.custom.customcmd.BackTaskCmd;
@@ -24,10 +26,11 @@ public class CustomTaskServiceImpl extends TaskServiceImpl implements CusTomTask
 	 * @param afterTaskIsdeleteCurrentTask 当前的任务是否删除
 	 * @param variables 参数
 	 * @param localScope 范围
+	 * @return  后退的过程中，产生新的任务
 	 * 
 	 * */
-	public void back(String taskId, boolean afterTaskIsdeleteCurrentTask,Map<String, Object> variables,boolean localScope) {
-	  	commandExecutor.execute(new BackTaskCmd(taskId, afterTaskIsdeleteCurrentTask,variables, localScope));
+	public List<TaskEntity> back(String taskId,Map<String, Object> variables,boolean localScope) {
+	   return commandExecutor.execute(new BackTaskCmd(taskId,variables, localScope));
 	  }
 
 	/**
