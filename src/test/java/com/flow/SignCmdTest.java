@@ -7,7 +7,9 @@ import java.util.Map;
 import org.activiti.engine.history.HistoricActivityInstance;
 import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
+import org.activiti.engine.impl.persistence.entity.TaskEntity;
 import org.activiti.engine.task.Task;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -18,9 +20,9 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:applicationContext.xml")
-public class EngineServiceTest extends BasePare {
+public class SignCmdTest extends BasePare {
 	
-	private Logger log = LoggerFactory.getLogger("EngineServiceTest");
+	private Logger log = LoggerFactory.getLogger("SignCmdTest");
 
 	
 	private PropertiesUtil util = new PropertiesUtil();
@@ -49,16 +51,24 @@ public class EngineServiceTest extends BasePare {
 		Map<String, Object> variables = new HashMap<String, Object>();
 		String taskId = util.getPropertyValue(todotaskId);
 		engineService.getCustomTaskService().complete(taskId, variables, false);
+		String preinstanceId = util.getPropertyValue(instanceId);
+		//查询未完成的任务
+		List<Task> tasks = engineService.getTodoTaskId(preinstanceId);
+		if(tasks != null && !tasks.isEmpty()){
+			util.setPropertiesValue("todotaskId", tasks.get(0).getId());
+		}
 	}
 
+	
 	@Test
-	public void back() {
+	public void beforesign() {
 		Map<String, Object> variables = new HashMap<String, Object>();
-		//当前的任务是：步骤三
 		String taskId = util.getPropertyValue(todotaskId);
 		System.out.println(taskId);
-		//步骤三回退，预料的结果是步骤二的生成任务
-		engineService.getCustomTaskService().back(taskId, variables, false);
+		TaskEntity task = engineService.getCustomTaskService().beforeSign(taskId, variables, false,"200");
+		if(task != null){
+			util.setPropertiesValue("todotaskId", task.getId());
+		}
 	}
 	
 	@Test
@@ -88,7 +98,7 @@ public class EngineServiceTest extends BasePare {
 		//查询未完成的任务
 		List<Task> tasks = engineService.getTasks(preinstanceId);
 		for (Task task : tasks) {
-			log.info("任务:{},{},{}",task.getName(),task.getOwner(),task.getAssignee());
+			log.info("任务:{},{},{},{}",task.getId(),task.getName(),task.getOwner(),task.getAssignee());
 		}
 	}
 	

@@ -24,6 +24,8 @@ import org.activiti.engine.impl.task.TaskDefinition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.flow.custom.service.CustomUserServer;
+
 /**
  * @author zhailz
  *
@@ -38,29 +40,43 @@ public class CustomUserTaskActivityBehavior extends UserTaskActivityBehavior {
 	
 	private Logger logger = LoggerFactory.getLogger("CustomUserTaskActivityBehavior");
 	
+	private CustomUserServer customUserServer;
+	
 	public CustomUserTaskActivityBehavior(TaskDefinition taskDefinition) {
 		super(taskDefinition);
 	}
 	
+	public CustomUserTaskActivityBehavior(TaskDefinition taskDefinition, CustomUserServer customUserServer) {
+		super(taskDefinition);
+		this.setCustomUserServer(customUserServer);
+	}
+
 	/**
 	 * 替换全部的用户查找
 	 * */
 	@Override
 	protected void handleAssignments(TaskEntity task, ActivityExecution execution) {
 		if (taskDefinition.getAssigneeExpression() != null) {
-			task.setAssignee((String) taskDefinition.getAssigneeExpression().getValue(execution), true, false);
+			String expressionValue = (String) taskDefinition.getAssigneeExpression().getValue(execution);
+			String userId = customUserServer.findUserId(expressionValue);
+			task.setAssignee(userId, true, false);
 		}
 
 		if (taskDefinition.getOwnerExpression() != null) {
+			String expressionValue = (String) taskDefinition.getOwnerExpression().getValue(execution);
+			String userId = customUserServer.findOwnerUserId(expressionValue);
+			logger.info("getOwnerExpression:{}",userId);
 			task.setOwner((String) taskDefinition.getOwnerExpression().getValue(execution));
 		}
 
 		if (!taskDefinition.getCandidateGroupIdExpressions().isEmpty()) {
 			for (Expression groupIdExpr : taskDefinition.getCandidateGroupIdExpressions()) {
+				logger.info("CandidateGroupIdExpressions:{}",groupIdExpr.getExpressionText());
 				Object value = groupIdExpr.getValue(execution);
 				if (value instanceof String) {
 					logger.info("解析到CandidateGroupId:{} 放入Task中。。。");
 					List<String> candiates = extractCandidates((String) value);
+					candiates = customUserServer.findCandidateGroups((String) value);
 					task.addCandidateGroups(candiates);
 				} else if (value instanceof Collection) {
 					task.addCandidateGroups((Collection) value);
@@ -212,6 +228,14 @@ public class CustomUserTaskActivityBehavior extends UserTaskActivityBehavior {
 		if (((ExecutionEntity) execution).getTasks().size() != 0)
 			throw new ActivitiException("UserTask should not be signalled before complete");
 		leave(execution);
+	}
+
+	public CustomUserServer getCustomUserServer() {
+		return customUserServer;
+	}
+
+	public void setCustomUserServer(CustomUserServer customUserServer) {
+		this.customUserServer = customUserServer;
 	}
 
 	

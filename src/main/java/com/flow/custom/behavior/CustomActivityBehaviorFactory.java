@@ -6,6 +6,8 @@ import org.activiti.engine.impl.bpmn.parser.factory.ActivityBehaviorFactory;
 import org.activiti.engine.impl.bpmn.parser.factory.DefaultActivityBehaviorFactory;
 import org.activiti.engine.impl.task.TaskDefinition;
 
+import com.flow.custom.service.CustomUserServer;
+
 /**
  * @author zhailz
  *
@@ -14,9 +16,11 @@ import org.activiti.engine.impl.task.TaskDefinition;
 public class CustomActivityBehaviorFactory extends DefaultActivityBehaviorFactory implements ActivityBehaviorFactory
 {
 	
+	private CustomUserServer customUserServer = new CustomUserServer();
+	
 	@Override
 	public UserTaskActivityBehavior createUserTaskActivityBehavior(UserTask userTask, TaskDefinition taskDefinition)
 	{
-		return new CustomUserTaskActivityBehavior(taskDefinition);
+		return new CustomUserTaskActivityBehavior(taskDefinition,customUserServer);
 	}
 }

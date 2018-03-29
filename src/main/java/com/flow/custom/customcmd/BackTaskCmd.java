@@ -33,7 +33,7 @@ import com.flow.util.exception.BaseIllegalException;
  *
  * @version 2018年3月21日 下午4:20:35
  */
-public class BackTaskCmd implements Command<List<TaskEntity>> {
+public class BackTaskCmd extends BaseCmd implements Command<List<TaskEntity>> {
 
 	private Logger log = LoggerFactory.getLogger("BackTaskCmd");
 
@@ -42,8 +42,8 @@ public class BackTaskCmd implements Command<List<TaskEntity>> {
 	private Map<String, Object> variables;
 
 	private boolean localScope;
-	
-	 public static final String DELETE_REASON_DELETED = "back action delete";
+
+	public static final String DELETE_REASON_DELETED = "back_action";
 
 	public BackTaskCmd(String taskId, Map<String, Object> variables, boolean localScope) {
 		this.taskId = taskId;
@@ -70,20 +70,20 @@ public class BackTaskCmd implements Command<List<TaskEntity>> {
 		if (task.isSuspended()) {
 			throw new ActivitiException(getSuspendedTaskException());
 		}
-		
-		log.info("find current task taskId:{},taskKey:{}",task.getId(),task.getName());
-		
-		//找到back的上一级的task
-		
+
+		log.info("find current task taskId:{},taskKey:{}", task.getId(), task.getName());
+
+		// 找到back的上一级的task
+
 		String definitionKey = task.getTaskDefinitionKey();
 		ProcessDefinitionImpl processDefinition = task.getExecution().getProcessDefinition();
 		ActivityImpl activiti = task.getExecution().getProcessDefinition().findActivity(definitionKey);
-		if(activiti != null){
-			ActivityImpl back = getBackActiviti(activiti,processDefinition);
-			if(back != null){
-				log.info("find back activiti:{}",back.toString());
+		if (activiti != null) {
+			ActivityImpl back = getBackActiviti(activiti, processDefinition);
+			if (back != null) {
+				log.info("find back activiti:{}", back.toString());
 				ExecutionEntity execution = task.getExecution();
-				complete(task,this.getVariables(),this.isLocalScope());
+				complete(task, DELETE_REASON_DELETED,this.getVariables(), this.isLocalScope());
 				execution.setActivity(back);
 				execution.performOperation(AtomicOperation.ACTIVITY_START);
 				List<TaskEntity> tasks = task.getExecution().getTasks();
@@ -94,50 +94,27 @@ public class BackTaskCmd implements Command<List<TaskEntity>> {
 		return null;
 	}
 
-	
-	private void complete(TaskEntity task, Map<String, Object> variables2, boolean localScope2) {
-		if (task.getDelegationState() != null && task.getDelegationState().equals(DelegationState.PENDING)) {
-	  		throw new ActivitiException("A delegated task cannot be completed, but should be resolved instead.");
-	  	}
-	  	
-		task.fireEvent(TaskListener.EVENTNAME_COMPLETE);
-	    
-	    if(Context.getProcessEngineConfiguration().getEventDispatcher().isEnabled()) {
-	    	Context.getProcessEngineConfiguration().getEventDispatcher().dispatchEvent(
-	    	    ActivitiEventBuilder.createEntityWithVariablesEvent(ActivitiEventType.TASK_COMPLETED, this, variables2, localScope));
-	    }
-	 
-	    Context.getCommandContext().getTaskEntityManager().deleteTask(task, "backAction", false);
-	    
-	    if (task.getExecutionId()!=null) {
-	      ExecutionEntity execution = task.getExecution();
-	      execution.removeTask(task);
-//	      execution.signal(null, null);
-	    }
-		
-	}
-
 	private ActivityImpl getBackActiviti(ActivityImpl currentActiviti, ProcessDefinitionImpl processDefinition) {
 		List<PvmTransition> incomings = currentActiviti.getIncomingTransitions();
-		if(incomings != null && incomings.size() > 1){
+		if (incomings != null && incomings.size() > 1) {
 			throw BaseIllegalException.tooManyBackActivities;
 		}
-		
-		if(incomings != null && !incomings.isEmpty()){
+
+		if (incomings != null && !incomings.isEmpty()) {
 			ActivityImpl sources = (ActivityImpl) incomings.get(0).getSource();
-			
-			if(sources.getActivityBehavior() instanceof UserTaskActivityBehavior || sources.getActivityBehavior() instanceof NoneStartEventActivityBehavior){
+
+			if (sources.getActivityBehavior() instanceof UserTaskActivityBehavior || sources.getActivityBehavior() instanceof NoneStartEventActivityBehavior) {
 				return sources;
 			}
-			
-			//如果是网关，回退的过程中碰到是网关的情况下，这中情况下也不能回退
-			if(sources.getActivityBehavior() instanceof GatewayActivityBehavior){
+
+			// 如果是网关，回退的过程中碰到是网关的情况下，这中情况下也不能回退
+			if (sources.getActivityBehavior() instanceof GatewayActivityBehavior) {
 				throw BaseIllegalException.backActivitiIsWrongType;
 			}
-		}else{
+		} else {
 			throw BaseIllegalException.noBackActivitiIs;
 		}
-		
+
 		return null;
 	}
 
