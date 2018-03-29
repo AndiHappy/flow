@@ -71,28 +71,17 @@ public class BeforeSignCmd extends BaseCmd implements Command<TaskEntity> {
 		//insert before task action ,this task refter to activity is  destination activity
 		ActivityImpl desactiviti = processDefinition.findActivity(definitionKey);
 		if(desactiviti != null){
-			ActivityImpl activititmp = clone(desactiviti,processDefinition);
-			if(activititmp != null){
-				log.info("clone activiti:{}",activititmp.toString());
-				execution.setActivity(activititmp);
-				//this taskentity refter to destination activity
-				execution.setVariable(ActivityManagerUtil.getDestinationActivityIdName(activititmp.getId()), desactiviti.getId());
-				//this taskentity refter to current activity
-				execution.setVariable(ActivityManagerUtil.getCurrentActivityIdName(activititmp.getId()), activititmp.getId());
-				execution.performOperation(AtomicOperation.ACTIVITY_START);
-			}
+			sign(execution, processDefinition, desactiviti);
 		}else{
 			String currentid = task.getExecution().getActivityId();
-			String desid = (String) execution.getVariable(ActivityManagerUtil.getDestinationActivityIdName(task.getId()));
-			desactiviti = ActivityManagerUtil.clone(currentid, desid, processDefinition, task.getAssignee());
-//			ActivityImpl activititmp = clone(activiti,processDefinition);
-//			if(activititmp != null){
+			ActivityImpl activititmp = clone(definitionKey,processDefinition);
+			if(activititmp != null){
 //				log.info("clone activiti:{}",activititmp.toString());
 //				execution.setActivity(activititmp);
 //				execution.setVariable(ActivityManagerUtil.destinationActivityIdName, activiti.getId());
 //				execution.setVariable(ActivityManagerUtil.currentActivityIdName, activititmp.getId());
 //				execution.performOperation(AtomicOperation.ACTIVITY_START);
-//			}
+			}
 		}
 
 		if(execution.getTasks() != null && !execution.getTasks().isEmpty()){
@@ -102,13 +91,33 @@ public class BeforeSignCmd extends BaseCmd implements Command<TaskEntity> {
 		}
 	}
 
+	private ActivityImpl clone(String definitionKey, ProcessDefinitionImpl processDefinition) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	private void sign(ExecutionEntity execution, ProcessDefinitionImpl processDefinition, ActivityImpl desactiviti) {
+		//construct new activiti as the insert task which refer to
+		ActivityImpl newactivity= clone(desactiviti,processDefinition);
+		if(newactivity != null){
+			log.info("clone activiti:{}",newactivity.toString());
+			execution.setActivity(newactivity);
+			//this taskentity refter to destination activity
+			execution.setVariable(ActivityManagerUtil.getDestinationActivityIdName(newactivity.getId()), desactiviti.getId());
+			//this taskentity refter to current activity
+			execution.setVariable(ActivityManagerUtil.getCurrentActivityIdName(newactivity.getId()), newactivity.getId());
+			execution.performOperation(AtomicOperation.ACTIVITY_START);
+		}
+	}
+
 	// temporary construct sign activiti，
 	private ActivityImpl clone(ActivityImpl activiti, ProcessDefinitionImpl processDefinition) {
 		String beforeId = activiti.getId();
 		String activityId = "IBT@"+beforeId+"@"+System.currentTimeMillis();
 		ActivityImpl tmp = processDefinition.createActivity(activityId);
 		TaskDefinition definitions = new TaskDefinition(null);
-		Expression nameExpression = new FixedValue(beforeId+"@BeforeTaskInsert");
+		definitions.setKey(activityId);
+		Expression nameExpression = new FixedValue(beforeId+"@IBT");
 		definitions.setNameExpression(nameExpression);
 		tmp.setActivityBehavior(new SignUserTaskBehavior(definitions,this.assignee));
 		TransitionImpl transition = tmp.createOutgoingTransition();
