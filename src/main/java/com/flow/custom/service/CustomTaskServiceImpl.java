@@ -7,6 +7,7 @@ import org.activiti.engine.impl.TaskServiceImpl;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
 import org.springframework.stereotype.Component;
 
+import com.flow.custom.customcmd.AfterSignCmd;
 import com.flow.custom.customcmd.BackTaskCmd;
 import com.flow.custom.customcmd.BeforeSignCmd;
 import com.flow.custom.customcmd.CusTomCompleteTaskCmd;
@@ -40,6 +41,11 @@ public class CustomTaskServiceImpl extends TaskServiceImpl implements CusTomTask
 	public TaskEntity beforeSign(String taskId, Map<String, Object> variables, boolean localScope, String assignee) {
 		return commandExecutor.execute(new BeforeSignCmd(taskId, variables, localScope, assignee));
 	}
+	
+	public TaskEntity afterSign(String taskId, Map<String, Object> variables, boolean localScope, String assignee) {
+		return commandExecutor.execute(new AfterSignCmd(taskId, variables, localScope, assignee));
+	}
+	
 
 	@Override
 	public void complete(String taskId) {

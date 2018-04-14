@@ -1,17 +1,22 @@
 package com.flow.custom.customcmd;
 
-import java.util.List;
 import java.util.Map;
 
 import org.activiti.engine.ActivitiException;
+import org.activiti.engine.delegate.Expression;
 import org.activiti.engine.delegate.TaskListener;
 import org.activiti.engine.delegate.event.ActivitiEventType;
 import org.activiti.engine.delegate.event.impl.ActivitiEventBuilder;
 import org.activiti.engine.impl.context.Context;
-import org.activiti.engine.impl.interceptor.Command;
+import org.activiti.engine.impl.el.FixedValue;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
+import org.activiti.engine.impl.pvm.process.ActivityImpl;
+import org.activiti.engine.impl.pvm.process.ProcessDefinitionImpl;
+import org.activiti.engine.impl.task.TaskDefinition;
 import org.activiti.engine.task.DelegationState;
+
+import com.flow.custom.behavior.CustomUserTaskActivityBehavior;
 
 /**
  * @author zhailz
@@ -39,5 +44,22 @@ public abstract class BaseCmd {
 	      execution.removeTask(task);
 	    }
 		
+	}
+	
+	/***
+	 * 根据活动标识（activityId）克隆出来一个活动定义
+	 * */
+	protected ActivityImpl onlyCloneActivity(String activityId,ProcessDefinitionImpl processDefinition) {
+		ActivityImpl tmp = processDefinition.createActivity(activityId);
+		TaskDefinition definition = new TaskDefinition(null);
+		definition.setKey(activityId);
+		Expression nameExpression = new FixedValue(activityId);
+		definition.setNameExpression(nameExpression);
+		tmp.setActivityBehavior(new CustomUserTaskActivityBehavior(new TaskDefinition(null)));
+		return tmp;
+	}
+	
+	protected String getSuspendedTaskException() {
+		return "Cannot execute operation: task is suspended";
 	}
 }

@@ -8,7 +8,7 @@
       </multiInstanceLoopCharacteristics>
     </userTask>
     <endEvent id="theEnd1"></endEvent>
-    <userTask id="step2" name="步骤2"  activiti:candidateGroups="management"></userTask>
+    <userTask id="step2" name="步骤2"  activiti:assignee="2"></userTask>
     <userTask id="step5" name="步骤5"></userTask>
     <userTask id="step6" name="步骤6">
       <multiInstanceLoopCharacteristics isSequential="true" activiti:collection="assigneeList" activiti:elementVariable="assignee">
@@ -16,7 +16,7 @@
       </multiInstanceLoopCharacteristics>
     </userTask>
     <userTask id="step7" name="步骤7"></userTask>
-    <userTask id="step3" name="步骤3" activiti:assignee="100" ></userTask>
+    <userTask id="step3" name="步骤3" activiti:assignee="3" ></userTask>
     <sequenceFlow id="flow1" sourceRef="step1" targetRef="step2"></sequenceFlow>
     <sequenceFlow id="flow2" sourceRef="step2" targetRef="step3"></sequenceFlow>
     <sequenceFlow id="flow3" sourceRef="step3" targetRef="step4"></sequenceFlow>

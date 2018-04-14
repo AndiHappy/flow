@@ -1,7 +1,6 @@
 package com.flow.custom.customcmd;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.activiti.engine.ActivitiException;
 import org.activiti.engine.ActivitiObjectNotFoundException;
@@ -67,22 +66,10 @@ public class BeforeSignCmd extends BaseCmd implements Command<TaskEntity> {
 		//first:taskEntity refer to Activiti Definition
 		//second:clone the activiti definition,set assigen 
 		ProcessDefinitionImpl processDefinition = task.getExecution().getProcessDefinition();
-		String definitionKey = task.getTaskDefinitionKey();
-		//insert before task action ,this task refter to activity is  destination activity
-		ActivityImpl desactiviti = processDefinition.findActivity(definitionKey);
-		if(desactiviti != null){
-			sign(execution, processDefinition, desactiviti);
-		}else{
-			String currentid = task.getExecution().getActivityId();
-			ActivityImpl activititmp = clone(definitionKey,processDefinition);
-			if(activititmp != null){
-//				log.info("clone activiti:{}",activititmp.toString());
-//				execution.setActivity(activititmp);
-//				execution.setVariable(ActivityManagerUtil.destinationActivityIdName, activiti.getId());
-//				execution.setVariable(ActivityManagerUtil.currentActivityIdName, activititmp.getId());
-//				execution.performOperation(AtomicOperation.ACTIVITY_START);
-			}
-		}
+		//因为是前加签的操作，所以下一个任务：需要跳转回来，即是当前的Task对应的活动定义
+		ActivityImpl desactiviti = findDestinationActivity(task, processDefinition);
+		
+		leave(execution, processDefinition, desactiviti);
 
 		if(execution.getTasks() != null && !execution.getTasks().isEmpty()){
 			return execution.getTasks().get(0);
@@ -90,15 +77,26 @@ public class BeforeSignCmd extends BaseCmd implements Command<TaskEntity> {
 			return null;
 		}
 	}
-
-	private ActivityImpl clone(String definitionKey, ProcessDefinitionImpl processDefinition) {
-		// TODO Auto-generated method stub
-		return null;
+	
+	/**
+	 * 当前任务的对应的下一个活动定义
+	 * */
+	private ActivityImpl findDestinationActivity(TaskEntity task,ProcessDefinitionImpl processDefinition) {
+		String definitionKey = task.getTaskDefinitionKey();
+		//insert before task action ,this task refter to activity is  destination activity
+		//查找当前的任务对应的任务的定义
+		ActivityImpl desactiviti = processDefinition.findActivity(definitionKey);
+		if(desactiviti == null){
+			//如果当前的任务定义为null，说明这个任务本身有可能是加签产生的任务，或者临时生成的任务
+			//直接的克隆一个活动定义出来
+			desactiviti =  onlyCloneActivity(definitionKey,processDefinition);
+		}
+		return desactiviti;
 	}
 
-	private void sign(ExecutionEntity execution, ProcessDefinitionImpl processDefinition, ActivityImpl desactiviti) {
+	private void leave(ExecutionEntity execution, ProcessDefinitionImpl processDefinition, ActivityImpl desactiviti) {
 		//construct new activiti as the insert task which refer to
-		ActivityImpl newactivity= clone(desactiviti,processDefinition);
+		ActivityImpl newactivity= cloneBeforeSign(desactiviti,processDefinition);
 		if(newactivity != null){
 			log.info("clone activiti:{}",newactivity.toString());
 			execution.setActivity(newactivity);
@@ -106,13 +104,15 @@ public class BeforeSignCmd extends BaseCmd implements Command<TaskEntity> {
 			execution.setVariable(ActivityManagerUtil.getDestinationActivityIdName(newactivity.getId()), desactiviti.getId());
 			//this taskentity refter to current activity
 			execution.setVariable(ActivityManagerUtil.getCurrentActivityIdName(newactivity.getId()), newactivity.getId());
+			//this para store activiti`s assigen
+			execution.setVariable(ActivityManagerUtil.getCurrentActivityAssigneeName(newactivity.getId()), newactivity.getId());
 			execution.performOperation(AtomicOperation.ACTIVITY_START);
 		}
 	}
 
 	// temporary construct sign activiti，
-	private ActivityImpl clone(ActivityImpl activiti, ProcessDefinitionImpl processDefinition) {
-		String beforeId = activiti.getId();
+	private ActivityImpl cloneBeforeSign(ActivityImpl desactiviti, ProcessDefinitionImpl processDefinition) {
+		String beforeId = desactiviti.getId();
 		String activityId = "IBT@"+beforeId+"@"+System.currentTimeMillis();
 		ActivityImpl tmp = processDefinition.createActivity(activityId);
 		TaskDefinition definitions = new TaskDefinition(null);
@@ -121,7 +121,7 @@ public class BeforeSignCmd extends BaseCmd implements Command<TaskEntity> {
 		definitions.setNameExpression(nameExpression);
 		tmp.setActivityBehavior(new SignUserTaskBehavior(definitions,this.assignee));
 		TransitionImpl transition = tmp.createOutgoingTransition();
-		transition.setDestination(activiti);
+		transition.setDestination(desactiviti);
 		ActivityManagerUtil.getInstance().cache(tmp);
 		return tmp;
 	}

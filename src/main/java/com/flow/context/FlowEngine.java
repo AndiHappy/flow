@@ -7,7 +7,6 @@ import org.activiti.engine.ProcessEngines;
 import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.task.Task;
 import org.activiti.spring.SpringProcessEngineConfiguration;
-import org.springframework.util.StringUtils;
 
 import com.flow.custom.behavior.CustomActivityBehaviorFactory;
 import com.flow.custom.service.CustomTaskServiceImpl;
@@ -24,7 +23,6 @@ public class FlowEngine extends SpringProcessEngineConfiguration {
 			ProcessEngines.setInitialized(false);
 			// 替换掉活动的Behavior的工程类
 			setActivityBehaviorFactory(new CustomActivityBehaviorFactory());
-
 		}
 		return super.buildProcessEngine();
 	}

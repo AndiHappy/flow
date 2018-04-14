@@ -9,7 +9,6 @@ import org.activiti.engine.history.HistoricTaskInstance;
 import org.activiti.engine.impl.persistence.entity.ExecutionEntity;
 import org.activiti.engine.impl.persistence.entity.TaskEntity;
 import org.activiti.engine.task.Task;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,7 +43,6 @@ public class SignCmdTest extends BasePare {
 		log.info("instanceId:{}", instance.getId());
 		util.setPropertiesValue("todotaskId", taskId);
 		util.setPropertiesValue(instanceId, instance.getId());
-
 		Map<String, Object> variables = new HashMap<String, Object>();
 		TaskEntity task = engineService.getCustomTaskService().beforeSign(taskId, variables, false, "200");
 		if (task != null) {
@@ -102,9 +100,10 @@ public class SignCmdTest extends BasePare {
 		for (HistoricTaskInstance task1 : tasks) {
 			log.info("histask: name:{},endTime:{}, Assignee:{} reson:{}", task1.getName(), task1.getEndTime(), task1.getId(), task1.getDeleteReason());
 		}
-
+		
+		rebuildApplicationContext();
 		taskId = util.getPropertyValue(todotaskId);
-		task = engineService.getCustomTaskService().beforeSign(taskId, variables, false, "200");
+		task = engineService.getCustomTaskService().beforeSign(taskId, variables, false, "300");
 		if (task != null) {
 			util.setPropertiesValue("todotaskId", task.getId());
 		}
@@ -115,6 +114,7 @@ public class SignCmdTest extends BasePare {
 			log.info("histask: name:{},endTime:{}, Assignee:{} reson:{}", task1.getName(), task1.getEndTime(), task1.getId(), task1.getDeleteReason());
 		}
 
+		rebuildApplicationContext();
 		taskId = util.getPropertyValue(todotaskId);
 		log.info("taskId:{}",taskId);
 		engineService.getCustomTaskService().complete(taskId, variables, false);
@@ -125,6 +125,7 @@ public class SignCmdTest extends BasePare {
 			util.setPropertiesValue("todotaskId", tasks1.get(0).getId());
 		}
 
+		rebuildApplicationContext();
 		taskId = util.getPropertyValue(todotaskId);
 		engineService.getCustomTaskService().complete(taskId, variables, false);
 
@@ -166,7 +167,7 @@ public class SignCmdTest extends BasePare {
 		Map<String, Object> variables = new HashMap<String, Object>();
 		String taskId = util.getPropertyValue(todotaskId);
 		System.out.println(taskId);
-		TaskEntity task = engineService.getCustomTaskService().beforeSign(taskId, variables, false, "200");
+		TaskEntity task = engineService.getCustomTaskService().beforeSign(taskId, variables, false, "400");
 		if (task != null) {
 			util.setPropertiesValue("todotaskId", task.getId());
 		}
