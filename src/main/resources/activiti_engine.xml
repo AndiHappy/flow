@@ -16,10 +16,10 @@
 		<property name="url" value="${activitidb.url}" />
 		<property name="username" value="${activitidb.username}" />
 		<property name="password" value="${activitidb.password}" />
-		<property name="initialSize" value="20" />
+	<!-- 	<property name="initialSize" value="20" />
 		<property name="maxActive" value="50" />
 		<property name="maxIdle" value="20" />
-		<property name="minIdle" value="10" />
+		<property name="minIdle" value="10" /> -->
 	</bean>
 	
 	<!-- 事务处理 -->
@@ -46,8 +46,8 @@
 	</bean>
 
 	<!-- processEngine -->
-	<bean id="processEngine" class="org.activiti.spring.ProcessEngineFactoryBean">
+	<!-- <bean id="processEngine" class="org.activiti.spring.ProcessEngineFactoryBean">
 		<property name="processEngineConfiguration" ref="processEngineConfiguration" />
-	</bean>
+	</bean> -->
 	
 </beans>

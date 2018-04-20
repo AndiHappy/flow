@@ -28,9 +28,9 @@ import com.flow.util.HC;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("classpath:applicationContext.xml")
-public class ExcuteTimeTest {
+public class ActivityTimeTest {
 	
-	private Logger log = LoggerFactory.getLogger("ExcuteTimeTest");
+	private Logger log = LoggerFactory.getLogger("ActivityTimeTest");
 
 	@Resource
 	protected FlowEngine engineService;
@@ -45,6 +45,7 @@ public class ExcuteTimeTest {
 	public void iniEngine() {
 		// 准备流程定义，加载到测试用例中
 		try {
+			
 			engineService.buildProcessEngine();
 			log.info("初始化引擎");
 			ProcessDefinition def = engineService.getRepositoryService().createProcessDefinitionQuery().processDefinitionKey("test1").processDefinitionName("测试1").processDefinitionTenantId(orgId).singleResult();
@@ -75,22 +76,36 @@ public class ExcuteTimeTest {
 				log.info("workflowDefinitionId:{}",workflowDefinitionId);
 //				String json = HC.getInstance().getResponse("http://127.0.0.1:8081/reduce?num=10", null, Charsets.UTF8);
 //				log.info("调用REST接口，返回:{}",json);
+				double startTime =0;
+				double completefirstTask =0;
+				double completeSecondTask = 0;
+				double sum = 0;
+				double num = 3000;
+				for (int i = 0; i < num; i++) {
+					long time = System.currentTimeMillis();
+					ProcessInstance instance = engineService.getRuntimeService().startProcessInstanceById(workflowDefinitionId);
+					long time2 = System.currentTimeMillis();
+					startTime = startTime+ (time2-time);
+					log.info("启动流程实例花费:{}  ms",time2-time);
+					ExecutionEntity instanceEntity = (ExecutionEntity) instance;
+					engineService.getCustomTaskService().complete(instanceEntity.getTasks().get(0).getId());
+					long time3 = System.currentTimeMillis();
+					completefirstTask = completefirstTask+ (time3-time2);
+					log.info("完成第一个任务花费:{} ms",time3-time2);
+					String nextId = engineService.getTaskService().createTaskQuery().processInstanceId(instance.getId()).singleResult().getId();
+					engineService.getCustomTaskService().complete(nextId);
+					long time4 = System.currentTimeMillis();
+					completeSecondTask = completeSecondTask+ (time4-time3);
+					log.info("完成第二个任务花费:{} ms",time4-time3);
+					sum = sum+ (time4-time);
+					log.info("总的花费是:{} ms",time4-time);
+				}
 				
-				
-				long time = System.currentTimeMillis();
-				ProcessInstance instance = engineService.getRuntimeService().startProcessInstanceById(workflowDefinitionId);
-				long time2 = System.currentTimeMillis();
-				log.info("启动流程实例花费:{}  ms",time2-time);
-				ExecutionEntity instanceEntity = (ExecutionEntity) instance;
-				engineService.getCustomTaskService().complete(instanceEntity.getTasks().get(0).getId());
-				long time3 = System.currentTimeMillis();
-				log.info("完成第一个任务花费:{} ms",time3-time2);
-				String nextId = engineService.getTaskService().createTaskQuery().processInstanceId(instance.getId()).singleResult().getId();
-				engineService.getCustomTaskService().complete(nextId);
-				long time4 = System.currentTimeMillis();
-				log.info("完成第二个任务花费:{} ms",time4-time3);
-				log.info("总的花费是:{} ms",time4-time);
-				
+				log.info("------------------------------------运行"+ num+"次的耗时-----------------------------------------------------");
+				log.info("---启动流程实例总花费:{}  ms,平均耗时:{} ",startTime,startTime/num);
+				log.info("---完成第一个任务总花费:{} ms,平均耗时:{} ",completefirstTask,completefirstTask/num);
+				log.info("---完成第二个任务总花费:{} ms,平均耗时:{} ",completeSecondTask,completeSecondTask/num);
+				log.info("---整个过程总花费:{} ms,平均耗时:{} ",sum,sum/num);
 				
 			}
 		} catch (FileNotFoundException e) {
